@@ -5,7 +5,7 @@
 var os = require('os');
 var dgram = require('dgram');
 var util = require('util');
-
+var ipaddr = require('ipaddr.js');
 var machina = require('machina');
 
 var FSM = require('./FSM.js');
@@ -282,6 +282,61 @@ FSM.prototype.AddTunn = function(datagram) {
     protocol_type: 1, // UDP
     tunnel_endpoint: this.localAddress + ":" + this.tunnel.address().port
   };
+}
+
+// get the local address of the IPv4 interface we're going to use
+FSM.prototype.getIPv4Interfaces = function() {
+  var candidateInterfaces = {};
+  var interfaces = os.networkInterfaces();
+  for (var iface in interfaces) {
+    for (var key in interfaces[iface]) {
+      var intf = interfaces[iface][key];
+      //console.log('key: %j, intf: %j', key, intf);
+      if (intf.family == 'IPv4' && !intf.internal) {
+        this.debugPrint(util.format(
+          "candidate interface: %s (%j)", iface, intf
+        ));
+        candidateInterfaces[iface] = intf;
+      }
+    }
+  }
+  return candidateInterfaces;
+}
+
+/* get the local interface for connecting to a target IP. Priority is
+   - explicit declaration: this.options.interface='eth0';
+   - the first interface which is on the same subnet as the target IP
+   - the first non-loopback interface
+  @target: must be created with ipaddr.parse('...')
+*/
+FSM.prototype.getLocalInterface = function(target) {
+  var candidateInterfaces = this.getIPv4Interfaces();
+  // if user has declared a desired interface then use it
+  if (this.options && this.options.interface) {
+    if (!candidateInterfaces.hasOwnProperty(this.options.interface))
+      throw "Interface " + this.options.interface +
+      " not found or has no useful IPv4 address!"
+    else
+      return candidateInterfaces[this.options.interface];
+  } else {
+    // search for the interface on same subnet as target
+    for (var intfidx in candidateInterfaces) {
+      var intf = candidateInterfaces[intfidx];
+      var intf_addr = ipaddr.parse(intf.address);
+      var intf_mask = ipaddr.IPv4.parse(intf.netmask).prefixLengthFromSubnetMask();
+      // return the first interface whose network/subnet matches the target IP
+      if (ipaddr.subnetMatch(target, {
+          range: [intf_addr, intf_mask]
+        }, false)) {
+        console.log('Using %j for connecting to %s', intf, target);
+        return intf;
+      }
+    }
+    // just return the first available IPv4 non-loopback interface
+    return candidateInterfaces[Object.keys(candidateInterfaces)[0]];
+  }
+  // no local IpV4 interfaces?
+  throw "No valid IPv4 interfaces detected";
 }
 
 Connection = function(options) {

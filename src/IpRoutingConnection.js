@@ -1,7 +1,7 @@
 /**
-* knx.js - a pure Javascript library for KNX
-* (C) 2016 Elias Karakoulakis
-*/
+ * knx.js - a pure Javascript library for KNX
+ * (C) 2016 Elias Karakoulakis
+ */
 
 const util = require('util');
 const dgram = require('dgram');
@@ -12,7 +12,7 @@ const dgram = require('dgram');
 **/
 function IpRoutingConnection(instance, options) {
 
-  instance.BindSocket = function( cb ) {
+  instance.BindSocket = function(cb) {
     var conn = this;
     var udpSocket = dgram.createSocket("udp4");
     udpSocket.bind(function() {
@@ -23,7 +23,8 @@ function IpRoutingConnection(instance, options) {
       try {
         conn.control.addMembership(conn.remoteEndpoint.addr);
       } catch (err) {
-        console.log('IPRouting connection: cannot add membership (%s)', err);
+        console.log('IPRouting connection: cannot add membership (%s)',
+          err);
       }
       cb && cb(udpSocket);
     });
@@ -33,16 +34,18 @@ function IpRoutingConnection(instance, options) {
   // <summary>
   ///     Start the connection
   /// </summary>
-  instance.Connect = function () {
+  instance.Connect = function() {
     var sm = this;
-    this.localAddress = this.getLocalAddress();
-    this.control = this.tunnel = this.BindSocket( function(socket) {
-      socket.on("message", function(msg, rinfo, callback)  {
-        sm.debugPrint(util.format('Inbound multicast message %j: %j', rinfo, msg));
+    var localIntf = this.getLocalInterface(this.remoteEndpoint.addr);
+    this.localAddress = localIntf.address;
+    this.control = this.tunnel = this.BindSocket(function(socket) {
+      socket.on("message", function(msg, rinfo, callback) {
+        sm.debugPrint(util.format('Inbound multicast message %j: %j',
+          rinfo, msg));
         sm.onUdpSocketMessage(msg, rinfo, callback);
       });
       // start connection sequence
-      sm.transition( 'connecting' );
+      sm.transition('connecting');
     });
     return this;
   }
