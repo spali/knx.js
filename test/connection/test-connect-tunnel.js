@@ -3,7 +3,8 @@ var knx = require('../..');
 Error.stackTraceLimit = Infinity;
 
 var connection = knx.Connection({
-  ipAddr: '192.168.8.4',
+  //ipAddr: '192.168.8.4',
+  ipAddr: '147.102.1.1',
   debug: true,
   handlers: {
     connected: function() {
