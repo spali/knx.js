@@ -61,7 +61,8 @@ module.exports = machina.Fsm.extend({
       _onEnter: function() {
         var sm = this;
         if (!this.localAddress) throw "Not bound to an IPv4 non-loopback interface";
-        this.debugPrint(util.format('Connecting to %s...', sm.localAddress));
+        this.debugPrint(util.format('Connecting from %s => %j...',
+          this.localAddress, this.remoteEndpoint));
         // set a connection timer for 3 seconds, 3 retries
         this.connecttimer = setInterval(function() {
           sm.debugPrint('connection timed out - retrying...');

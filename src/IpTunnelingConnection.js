@@ -6,16 +6,37 @@
 const util = require('util');
 const dgram = require('dgram');
 const ipaddr = require('ipaddr.js');
-
-/// <summary>
-///     Initializes a new KNX tunneling connection with provided values. Make sure the local system allows
-///     UDP messages to the localIpAddress and localPort provided
-/// </summary>
+const udpPuncher = require('udp-hole-puncher');
+/*
+<summary>
+  Initializes a new KNX tunneling connection with provided values.
+  Make sure the local system allows
+  UDP messages to the localIpAddress and localPort provided
+</summary>
+*/
 function IpTunnelingConnection(instance, options) {
 
   instance.BindSocket = function(cb) {
     instance.debugPrint('IpTunnelingConnection.BindSocket');
     var udpSocket = dgram.createSocket("udp4");
+    if (this.usingNAT) {
+      // puncher config
+      var puncher = new udpPuncher(udpSocket);
+      // when connection is established, send dummy message
+      puncher.on('connected', function(j) {
+          console.log('puncher.connected %j', j);
+          //var message = new Buffer('hello')
+          //udpSocket.send(message, 0, message.length, peer.port, peer.addr)
+        })
+        // error handling code
+      puncher.on('error', function(error) {
+          console.log('puncher.error %j', error);
+          //  ...
+        })
+        // connect to peer (using its public address and port)
+      console.log('punching hole to %j', this.remoteEndpoint.addrstring);
+      puncher.connect(this.remoteEndpoint.addrstring, this.remoteEndpoint.port)
+    }
     udpSocket.bind(function() {
       instance.debugPrint(util.format('tunneling socket bound to %j',
         udpSocket.address()));
@@ -24,12 +45,19 @@ function IpTunnelingConnection(instance, options) {
     return udpSocket;
   }
 
-  // <summry>
-  ///     Start the connection
-  /// </summary>
   instance.Connect = function() {
     var sm = this;
+    // get the most suitable interface for connecting to KNX
     var localIntf = this.getLocalInterface(this.remoteEndpoint.addr);
+    // 1) is the target KNX router outside our network/mask?
+    if (!instance.containsAddress(localIntf, this.remoteEndpoint.addr)) {
+      // AND 2) is this host using a private IP adddress ?
+      var localAddr = ipaddr.parse(localIntf.address);
+      if (localAddr.range() == 'private') {
+        console.log('using NAT hole puncher');
+        this.usingNAT = true;
+      }
+    }
     this.localAddress = localIntf.address;
     // create a control socket for CONNECT, CONNECTIONSTATE and DISCONNECT
     this.control = this.BindSocket(function(socket) {

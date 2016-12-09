@@ -15,15 +15,13 @@
     "name": "Elias Karakoulakis",
     "email": "Elias.Karakoulakis@gmail.com"
   },
-  "maintainers": [
-    {
-      "name": "Elias Karakoulakis",
-      "email": "elias.karakoulakis@gmail.com"
-    },{
-      "name": "Mattias Holmlund",
-      "email": "mattias@holmlund.se"
-    }
-  ],
+  "maintainers": [{
+    "name": "Elias Karakoulakis",
+    "email": "elias.karakoulakis@gmail.com"
+  }, {
+    "name": "Mattias Holmlund",
+    "email": "mattias@holmlund.se"
+  }],
   "keywords": [
     "knx",
     "eibd",
@@ -33,7 +31,8 @@
     "binary-parser": "1.1.5",
     "binary-protocol": "0.0.0",
     "ipaddr.js": "1.2.0",
-    "machina": "^2.0.0-1"
+    "machina": "2.0.0-1",
+    "udp-hole-puncher": "0.3.9"
   },
   "devDependencies": {
     "multi-tape": "^1.1.1",

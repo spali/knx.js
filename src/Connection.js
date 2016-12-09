@@ -322,21 +322,23 @@ FSM.prototype.getLocalInterface = function(target) {
     // search for the interface on same subnet as target
     for (var intfidx in candidateInterfaces) {
       var intf = candidateInterfaces[intfidx];
-      var intf_addr = ipaddr.parse(intf.address);
-      var intf_mask = ipaddr.IPv4.parse(intf.netmask).prefixLengthFromSubnetMask();
       // return the first interface whose network/subnet matches the target IP
-      if (ipaddr.subnetMatch(target, {
-          range: [intf_addr, intf_mask]
-        }, false)) {
-        console.log('Using %j for connecting to %s', intf, target);
-        return intf;
-      }
+      if (this.containsAddress(intf, target)) return intf;
     }
     // just return the first available IPv4 non-loopback interface
     return candidateInterfaces[Object.keys(candidateInterfaces)[0]];
   }
   // no local IpV4 interfaces?
   throw "No valid IPv4 interfaces detected";
+}
+
+// check if the given interface contains a target IP
+FSM.prototype.containsAddress = function(intf, target) {
+  var intf_addr = ipaddr.parse(intf.address);
+  var intf_mask = ipaddr.IPv4.parse(intf.netmask).prefixLengthFromSubnetMask();
+  return (ipaddr.subnetMatch(target, {
+    range: [intf_addr, intf_mask]
+  }, false));
 }
 
 Connection = function(options) {
