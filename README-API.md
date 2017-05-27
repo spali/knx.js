@@ -1,4 +1,4 @@
-### Connect to your KNX IP router
+### Connect to your KNX IP router or interface
 
 ```js
 // Create a multicast connection, no mandatory arguments.
@@ -8,6 +8,7 @@ var connection = new knx.Connection( {
   physAddr: '15.15.15', // the KNX physical address we want to use
   debug: true, // print lots of debug output to the console
   manualConnect: true, // do not automatically connect, but use connection.Connect() to establish connection
+  acknowledge: false, // if you use an IP router, you can enable acknoledgements
   minimumDelay: 10, // wait at least 10 millisec between each datagram
   handlers: {
     // wait for connection establishment before doing anything

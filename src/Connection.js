@@ -78,7 +78,7 @@ FSM.prototype.AddCEMI = function(datagram, msgcode) {
       repeat: 1, // the OPPOSITE: 1=do NOT repeat
       broadcast: 1, // 0-system broadcast 1-broadcast
       priority: 3, // 0-system 1-normal 2-urgent 3-low
-      acknowledge: 1, // FIXME: only for L_Data.req
+      acknowledge: (this.options.acknowledge ? 1 : 0),
       confirm: 0, // FIXME: only for L_Data.con 0-ok 1-error
       // 2nd byte
       destAddrType: 1, // FIXME: 0-physical 1-groupaddr

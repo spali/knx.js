@@ -13,6 +13,7 @@ test('DPT9 floating point conversion', function(t) {
     ['DPT9', [0x87, 0xfe], -0.02],
     ['DPT9', [0x0c, 0x24], 21.2],
     ['DPT9', [0x0c, 0x7e], 23],
+    ['DPT9', [0x37, 0x53], 1200],
     ['DPT9', [0x5c, 0xc4], 24985.6],
     ['DPT9', [0xdb, 0x3c], -24985.6],
     ['DPT9', [0x7f, 0xfe], 670433.28],
@@ -26,13 +27,13 @@ test('DPT9 floating point conversion', function(t) {
     // unmarshalling test (raw data to value)
     let converted = DPTLib.fromBuffer(buf, dpt);
     t.ok(Math.abs(converted - val) < 0.0001,
-        `${tests[i][0]} fromBuffer value ${val}`)
+        `${tests[i][0]} fromBuffer value 0x${buf.toString('hex')} => ${val}`)
 
     // marshalling test (value to raw data)
     var apdu = {};
     DPTLib.populateAPDU(val, apdu, 'dpt9');
     t.ok(Buffer.compare(buf, apdu.data) == 0,
-      `${tests[i][0]} formatAPDU value ${val}`)
+      `${tests[i][0]} formatAPDU value ${val} => 0x${apdu.data.toString('hex')}`)
   }
   t.end()
 })
