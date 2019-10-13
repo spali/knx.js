@@ -89,7 +89,10 @@ Address.parse = function (addr /*string*/, addrtype /*TYPE*/, twoLevelAddressing
     if (group) {
       // 3 level group address
       if (hinibble < 0  || hinibble > 31)  throw "Invalid KNX 3-level main group: "+addr;
-      if (midnibble < 0 || midnibble > 7)  throw "Invalid KNX 3-level mid group: "+addr;
+      if (midnibble < 0 || midnibble > 7)  {
+        //console.trace("Here I am!");
+        throw "Invalid KNX 3-level mid group: "+addr;
+      }
       if (lonibble < 0  || lonibble > 255) throw "Invalid KNX 3-level sub group: "+addr;
       address.writeUInt8((hinibble << 3) + midnibble, 0);
       address.writeUInt8(lonibble ,1);

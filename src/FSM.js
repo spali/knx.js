@@ -340,21 +340,28 @@ module.exports = machina.Fsm.extend({
         // send the telegram on the wire
         this.seqnum += 1;
         if (this.useTunneling) datagram.tunnstate.seqnum = this.seqnum & 0xFF;
+        this.log.debug('(%s):\t>>>>>>> preparing seqnum: %d', this.compositeState(), this.seqnum);
         this.send( datagram, function(err) {
-          // TODO: handle send err
-          if (sm.useTunneling) sm.sentTunnRequests[datagram.cemi.dest_addr] = datagram;
+          if (err) {
+            //console.trace('error sending datagram, going idle');
+            sm.seqnum -= 1;
+            sm.transition( 'idle' );
+          } else {
+            // successfully sent the datagram
+            if (sm.useTunneling) sm.sentTunnRequests[datagram.cemi.dest_addr] = datagram;
+            sm.lastSentTime = Date.now();
+            sm.log.debug('(%s):\t>>>>>>> successfully sent seqnum: %d', sm.compositeState(), sm.seqnum);
+            if (sm.useTunneling) {
+              // and then wait for the acknowledgement
+              sm.transition( 'sendTunnReq_waitACK', datagram );
+            } else {
+              sm.transition( 'idle' );
+            }
+          }
         });
-        this.lastSentTime = Date.now();
-        this.log.debug(util.format('>>>>>>> seqnum: %d', this.seqnum));
-        if (this.useTunneling) {
-          // and then wait for the acknowledgement
-          this.transition( 'sendTunnReq_waitACK', datagram );
-        } else {
-          this.transition( 'idle' );
-        }
       },
       "*": function ( data ) {
-        this.log.debug(util.format('*** deferring %s until transition sendDatagram => idle', data.inputType));
+        this.log.debug('(%s):\t*** deferring %s until transition to idle', this.compositeState(), data.inputType);
         this.deferUntilTransition( 'idle' );
       }
     },
@@ -365,23 +372,28 @@ module.exports = machina.Fsm.extend({
     sendTunnReq_waitACK:  {
       _onEnter: function ( datagram ) {
         var sm = this;
-        //this.log.debug('setting up tunnreq timeout for %j', datagram);
+        this.log.debug('(%s): setting up tunnreq timeout for %j', sm.compositeState(), datagram);
+        //KnxLog.get().debug('(%s): setting up tunnreq timeout for %j', sm.compositeState(),  datagram);
         this.tunnelingAckTimer = setTimeout( function() {
-          this.log.debug('timed out waiting for TUNNELING_ACK');
+          KnxLog.get().debug('(%s): timed out waiting for TUNNELING_ACK', sm.compositeState());
+          //this.log.debug('timed out waiting for TUNNELING_ACK');
           // TODO: resend datagram, up to 3 times
           sm.transition( 'idle' );
           sm.emit('tunnelreqfailed', datagram);
         }.bind( this ), 2000 );
       },
       _onExit: function () {
+        KnxLog.get().debug('(%s): clearing tunnreq timeout', this.compositeState());
         clearTimeout( this.tunnelingAckTimer );
       },
       inbound_TUNNELING_ACK: function ( datagram ) {
-        this.log.debug(util.format('===== datagram %d acknowledged by IP router', datagram.tunnstate.seqnum));
+        //this.log.debug(util.format('===== datagram %d acknowledged by IP router', datagram.tunnstate.seqnum));
+        KnxLog.get().debug('(%s): ===== datagram %d acknowledged by IP router', this.compositeState(),   datagram.tunnstate.seqnum);
         this.transition( 'idle' );
       },
       "*": function ( data ) {
-        this.log.debug(util.format('*** deferring %s until transition sendTunnReq_waitACK => idle', data.inputType));
+        //this.log.debug(util.format('*** ', data.inputType));
+        KnxLog.get().debug('(%s) :deferring %s until transition to idle ', this.compositeState(), data.inputType);
         this.deferUntilTransition( 'idle' );
       },
     },
@@ -398,7 +410,8 @@ module.exports = machina.Fsm.extend({
         sm.emitEvent(datagram);
       },
       "*": function ( data ) {
-        this.log.debug(util.format('*** deferring Until Transition %j', data));
+        //this.log.debug(util.format('*** deferring Until Transition %j', data));
+        KnxLog.get().debug('(%s): *** deferring Until Transition %j ', this.compositeState(), data);
         this.deferUntilTransition( 'idle' );
       },
     },

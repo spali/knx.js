@@ -36,8 +36,8 @@ FSM.prototype.onUdpSocketMessage = function(msg, rinfo, callback) {
       this.handle(signal, dg);
     }
   } catch(err) {
-    KnxLog.get().debug('(%s): Incomplete/unparseable UDP packet: %s: %s',
-      this.compositeState(),err, msg.toString('hex')
+    KnxLog.get().debug('(%s): Incomplete/unparseable UDP packet: %s: %s\n%s',
+      this.compositeState(),err, msg.toString('hex'), err.stack
     );
   }
 };
@@ -179,14 +179,15 @@ FSM.prototype.send = function(datagram, callback) {
       buf, 0, buf.length,
       conn.remoteEndpoint.port, conn.remoteEndpoint.addr.toString(),
       function(err) {
-        KnxLog.get().trace('(%s): UDP sent %s: %s %s', conn.compositeState(),
+        KnxLog.get().debug('(%s): UDP sent to %s:%s %s: %s %s', conn.compositeState(),
+          conn.remoteEndpoint.addr.toString(), conn.remoteEndpoint.port,
           (err ? err.toString() : 'OK'), descr, buf.toString('hex')
         );
         if (typeof callback === 'function') callback(err);
       }
     );
   } catch (e) {
-    KnxLog.get().warn(e);
+    KnxLog.get().warn('FSM.prototype.send: %s\n%s', e, e.stack);
     if (typeof callback === 'function') callback(e);
   } 
 }
